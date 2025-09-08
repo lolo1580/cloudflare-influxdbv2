@@ -1,86 +1,142 @@
 #!/bin/bash
-# cloudflare-analytics.sh - Cloudflare GraphQL to InfluxDB v2 (for Grafana)
+set -Eeuo pipefail
+echo "Running: $(readlink -f "$0")"
 
-# InfluxDB v2 Configuration
-InfluxDBURL="http://xxx.xxx.xxx.xxx"
+# ============== InfluxDB v2 ==============
+InfluxDBURL="http://192.168.xx.xx"
 InfluxDBPort="8086"
-InfluxDBBucket="yourbucketname"
-InfluxDBToken="yourapitoken"
-InfluxDBOrg="yourorgname"
+InfluxDBBucket="__BUCKET_NAME__"
+InfluxDBOrg="__ORG_NAME__"
+InfluxDBToken="__INFLUX_TOKEN__"   # ← remplace
 
-# Cloudflare API Configuration
-cloudflareapikey="Cloudflare global api token"
-cloudflarezone="Your zone id API"
-cloudflareemail="your Email"
+# ============== Cloudflare ==============
+# recommandé : API Token (scope Zone:Analytics:Read sur keller-laurent.org)
+CLOUDFLARE_API_TOKEN="__DEDICATED_API_TOKEN__"
 
-# Time range (last 7 days)
-back_seconds=$((60*60*24*7))
-end_epoch=$(date +'%s')
-start_epoch=$((end_epoch - back_seconds))
-start_date=$(date --date="@$start_epoch" +'%Y-%m-%d')
-end_date=$(date --date="@$end_epoch" +'%Y-%m-%d')
+# fallback si tu n’utilises pas d’API token :
+CLOUDFLARE_GLOBAL_API_KEY=""
+CLOUDFLARE_EMAIL="__YOURMAIL__"
 
-# GraphQL payload
-PAYLOAD=$(cat <<EOF
-{
-  "query": "query { viewer { zones(filter: {zoneTag: \$zoneTag}) { httpRequests1dGroups(limit: 7, filter: \$filter) { dimensions { date } sum { browserMap { pageViews uaBrowserFamily } bytes cachedBytes cachedRequests contentTypeMap { bytes requests edgeResponseContentTypeName } countryMap { bytes requests threats clientCountryName } encryptedBytes encryptedRequests ipClassMap { requests ipType } pageViews requests responseStatusMap { requests edgeResponseStatus } threats threatPathingMap { requests threatPathingName } } uniq { uniques } } } } }",
-  "variables": {
-    "zoneTag": "$cloudflarezone",
-    "filter": {
-      "date_geq": "$start_date",
-      "date_leq": "$end_date"
+# zone tag
+CLOUDFLARE_ZONE_TAG="__ZONEID__"
+
+# ============== Fenêtre ==============
+DAYS=7   # mets 1 si ton bucket a une rétention courte
+
+# ============== Dépendances ==============
+need() { command -v "$1" >/dev/null 2>&1 || { echo "Manque dépendance: $1"; exit 1; }; }
+need jq
+need curl
+need date
+
+# ============== Helpers ==============
+escape_tag() { sed -e 's/\\/\\\\/g' -e 's/,/\\,/g' -e 's/=/\\=/g' -e 's/ /\\ /g'; }
+
+write_influx() {
+  local line="$1"
+  local url="${InfluxDBURL}:${InfluxDBPort}/api/v2/write?org=${InfluxDBOrg}&bucket=${InfluxDBBucket}&precision=s"
+  local resp code body
+  resp=$(curl -s -w "\n%{http_code}" -XPOST "$url" \
+    -H "Authorization: Token ${InfluxDBToken}" \
+    -H "Content-Type: text/plain; charset=utf-8" \
+    --data-binary "$line")
+  code="${resp##*$'\n'}"
+  body="${resp%$'\n'*}"
+  if [[ "$code" != "204" ]]; then
+    echo "Influx write HTTP: $code — $body"
+  else
+    echo "Influx write HTTP: 204"
+  fi
+}
+
+cf_call() {
+  local payload="$1"
+  if [[ -n "${CLOUDFLARE_API_TOKEN:-}" && "$CLOUDFLARE_API_TOKEN" != "__CLOUDFLARE_API_TOKEN__" ]]; then
+    curl -sS -X POST "https://api.cloudflare.com/client/v4/graphql" \
+      -H 'Content-Type: application/json' \
+      -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+      --data "$payload"
+  else
+    curl -sS -X POST "https://api.cloudflare.com/client/v4/graphql" \
+      -H 'Content-Type: application/json' \
+      -H "X-Auth-Email: ${CLOUDFLARE_EMAIL}" \
+      -H "X-Auth-Key: ${CLOUDFLARE_GLOBAL_API_KEY}" \
+      --data "$payload"
+  fi
+}
+
+# ============== GraphQL (adaptive) ==============
+GRAPHQL_QUERY='query($zoneTag: String!, $ts: Date) {
+  viewer {
+    zones(filter: {zoneTag: $zoneTag}) {
+      series: httpRequestsAdaptiveGroups(
+        limit: 5000,
+        orderBy: [count_DESC],
+        filter: { date: $ts }
+      ) {
+        count
+        sum { edgeResponseBytes visits }
+        dimensions { clientCountryName }
+      }
     }
   }
-}
-EOF
-)
+}'
 
-# Query Cloudflare GraphQL API
-cloudflareUrl=$(curl -s -X POST \
-  -H "Content-Type: application/json" \
-  -H "X-Auth-Email: $cloudflareemail" \
-  -H "X-Auth-Key: $cloudflareapikey" \
-  --data "$PAYLOAD" \
-  https://api.cloudflare.com/client/v4/graphql/)
+do_day() {
+  local the_date="$1"          # YYYY-MM-DD
+  local ts
+  ts=$(date -u -d "${the_date} 12:00:00" +%s)  # 12:00 UTC (plus visible dans l’UI)
 
-# Loop over days
-declare -i arraydays=0
-for requests in $(echo "$cloudflareUrl" | jq -r '.data.viewer.zones[0].httpRequests1dGroups[].sum.requests'); do
-  cfRequestsAll=$(echo "$cloudflareUrl" | jq -r ".data.viewer.zones[0].httpRequests1dGroups[$arraydays].sum.requests")
-  if [[ "$cfRequestsAll" == "null" ]]; then break; fi
+  # payload JSON compact
+  local payload
+  payload=$(jq -n --arg q "$GRAPHQL_QUERY" --arg z "$CLOUDFLARE_ZONE_TAG" --arg t "$the_date" \
+            '{query:$q, variables:{zoneTag:$z, ts:$t}}')
 
-  cfRequestsCached=$(echo "$cloudflareUrl" | jq -r ".data.viewer.zones[0].httpRequests1dGroups[$arraydays].sum.cachedRequests")
-  cfRequestsUncached=$(echo "$cfRequestsAll - $cfRequestsCached" | bc)
+  # appel Cloudflare
+  local resp
+  resp=$(cf_call "$payload")
 
-  cfBandwidthAll=$(echo "$cloudflareUrl" | jq -r ".data.viewer.zones[0].httpRequests1dGroups[$arraydays].sum.bytes")
-  cfBandwidthCached=$(echo "$cloudflareUrl" | jq -r ".data.viewer.zones[0].httpRequests1dGroups[$arraydays].sum.cachedBytes")
-  cfBandwidthUncached=$(echo "$cfBandwidthAll - $cfBandwidthCached" | bc)
+  # erreurs GraphQL ?
+  if [[ "$(echo "$resp" | jq '.errors|length // 0')" -gt 0 ]]; then
+    echo "Cloudflare GraphQL errors for $the_date:"
+    echo "$resp" | jq '.errors'
+    return 1
+  fi
 
-  cfThreatsAll=$(echo "$cloudflareUrl" | jq -r ".data.viewer.zones[0].httpRequests1dGroups[$arraydays].sum.threats")
-  cfPageviewsAll=$(echo "$cloudflareUrl" | jq -r ".data.viewer.zones[0].httpRequests1dGroups[$arraydays].sum.pageViews")
-  cfUniquesAll=$(echo "$cloudflareUrl" | jq -r ".data.viewer.zones[0].httpRequests1dGroups[$arraydays].uniq.uniques")
-  date=$(echo "$cloudflareUrl" | jq -r ".data.viewer.zones[0].httpRequests1dGroups[$arraydays].dimensions.date")
-  cfTimeStamp=$(date -d "$date" +%s)
+  local base='.data.viewer.zones[0].series'
+  local len
+  len=$(echo "$resp" | jq "$base | length")
+  [[ "$len" -eq 0 ]] && { echo "No data for $the_date"; return 0; }
 
-  echo "Writing Zone data to InfluxDB (cloudflare_analytics)"
-  curl -s -XPOST "$InfluxDBURL:$InfluxDBPort/api/v2/write?precision=s&bucket=$InfluxDBBucket&org=$InfluxDBOrg" \
-    -H "Authorization: Token $InfluxDBToken" \
-    --data-binary "cloudflare_analytics,cfZone=$cloudflarezone cfRequestsAll=$cfRequestsAll,cfRequestsCached=$cfRequestsCached,cfRequestsUncached=$cfRequestsUncached,cfBandwidthAll=$cfBandwidthAll,cfBandwidthCached=$cfBandwidthCached,cfBandwidthUncached=$cfBandwidthUncached,cfThreatsAll=$cfThreatsAll,cfPageviewsAll=$cfPageviewsAll,cfUniquesAll=$cfUniquesAll $cfTimeStamp"
+  # Totaux jour (somme des pays)
+  local req_all bw_all visits_all
+  req_all=$(   echo "$resp" | jq -r "$base | map(.count) | add // 0")
+  bw_all=$(    echo "$resp" | jq -r "$base | map(.sum.edgeResponseBytes) | add // 0")
+  visits_all=$(echo "$resp" | jq -r "$base | map(.sum.visits) | add // 0")
+  [[ "$bw_all" =~ ^[0-9]+$ ]] && bw_all="${bw_all}.0"
 
-  declare -i arraycountry=0
-  for requests in $(echo "$cloudflareUrl" | jq -r ".data.viewer.zones[0].httpRequests1dGroups[$arraydays].sum.countryMap[]?"); do
-    cfRequestsCC=$(echo "$cloudflareUrl" | jq -r ".data.viewer.zones[0].httpRequests1dGroups[$arraydays].sum.countryMap[$arraycountry].clientCountryName")
-    if [[ "$cfRequestsCC" == "null" ]]; then break; fi
+  echo "Write totals $the_date"
+  write_influx "cloudflare_analytics,cfZone=${CLOUDFLARE_ZONE_TAG} cfRequestsAll=${req_all}i,cfBandwidthAll=${bw_all},cfVisits=${visits_all}i ${ts}"
 
-    cfRequests=$(echo "$cloudflareUrl" | jq -r ".data.viewer.zones[0].httpRequests1dGroups[$arraydays].sum.countryMap[$arraycountry].requests // \"0\"")
+  # Détail par pays
+  local j cc cc_tag reqs bytes visits
+  for ((j=0; j<len; j++)); do
+    cc=$(echo "$resp" | jq -r "$base[$j].dimensions.clientCountryName // empty")
+    [[ -z "$cc" ]] && continue
+    cc_tag=$(printf "%s" "$cc" | escape_tag)
+    reqs=$(  echo "$resp" | jq -r "$base[$j].count // 0")
+    bytes=$( echo "$resp" | jq -r "$base[$j].sum.edgeResponseBytes // 0")
+    visits=$(echo "$resp" | jq -r "$base[$j].sum.visits // 0")
+    [[ "$bytes" =~ ^[0-9]+$ ]] && bytes="${bytes}.0"
 
-    echo "Writing Zone data per Country to InfluxDB (cloudflare_analytics_country)"
-    curl -s -XPOST "$InfluxDBURL:$InfluxDBPort/api/v2/write?precision=s&bucket=$InfluxDBBucket&org=$InfluxDBOrg" \
-      -H "Authorization: Token $InfluxDBToken" \
-      --data-binary "cloudflare_analytics_country,country=$cfRequestsCC visits=$cfRequests $cfTimeStamp"
-
-    arraycountry+=1
+    write_influx "cloudflare_analytics_country,cfZone=${CLOUDFLARE_ZONE_TAG},country=${cc_tag} requests=${reqs}i,bandwidth=${bytes},visits=${visits}i ${ts}"
   done
+}
 
-  arraydays+=1
+# ============== Boucle des N derniers jours ==============
+for i in $(seq 0 $((DAYS-1))); do
+  day=$(date -u -d "-${i} day" +'%Y-%m-%d')
+  do_day "$day"
 done
+
+echo "Done."
