@@ -10,7 +10,13 @@ This script pulls Cloudflare analytics through the GraphQL API and writes the re
 
 ## Configuration
 
-Edit the variables at the top of `cloudflare-analytics.sh`:
+Create a local `.env` file next to `cloudflare-analytics.sh`:
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env`:
 
 ```bash
 InfluxDBURL="http://YOUR_INFLUXDB_IP"
@@ -32,6 +38,12 @@ ENABLE_THREAT_METRICS=true
 ENABLE_TOP_PATHS=true
 ENABLE_USER_AGENTS=false
 ENABLE_CONTENT_TYPES=true
+```
+
+The `.env` file is ignored by Git so tokens and local settings are not published. The script loads `${SCRIPT_DIR}/.env` by default. To use another file, set `ENV_FILE`:
+
+```bash
+ENV_FILE=/etc/cloudflare-analytics/laurentkeller.org.env ./cloudflare-analytics.sh
 ```
 
 `zone` and `date` are written as tags on every measurement. `cfZone` is also kept for backwards compatibility with the previous setup.
@@ -256,6 +268,7 @@ After=network-online.target
 Type=oneshot
 User=YOUR_USERNAME
 WorkingDirectory=/home/YOUR_USERNAME/gh/cloudflare-influxdbv2
+Environment=ENV_FILE=/home/YOUR_USERNAME/gh/cloudflare-influxdbv2/.env
 ExecStart=/home/YOUR_USERNAME/gh/cloudflare-influxdbv2/cloudflare-analytics.sh
 ```
 

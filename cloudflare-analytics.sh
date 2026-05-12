@@ -2,23 +2,25 @@
 set -Eeuo pipefail
 
 SCRIPT_PATH="$(readlink -f "$0")"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+ENV_FILE="${ENV_FILE:-${SCRIPT_DIR}/.env}"
 
 log_info() { printf '[INFO] %s\n' "$*"; }
 log_warn() { printf '[WARN] %s\n' "$*"; }
 log_error() { printf '[ERROR] %s\n' "$*" >&2; }
 
 # ============== InfluxDB v2 ==============
-InfluxDBURL="http://192.168.xx.xx"
+InfluxDBURL=""
 InfluxDBPort="8086"
-InfluxDBBucket="__BUCKET_NAME__"
-InfluxDBOrg="__ORG_NAME__"
-InfluxDBToken="__INFLUX_TOKEN__"
+InfluxDBBucket=""
+InfluxDBOrg=""
+InfluxDBToken=""
 
 # ============== Cloudflare ==============
-CLOUDFLARE_API_TOKEN="__DEDICATED_API_TOKEN__"
+CLOUDFLARE_API_TOKEN=""
 CLOUDFLARE_GLOBAL_API_KEY=""
-CLOUDFLARE_EMAIL="__YOURMAIL__"
-CLOUDFLARE_ZONE_TAG="__ZONEID__"
+CLOUDFLARE_EMAIL=""
+CLOUDFLARE_ZONE_TAG=""
 
 # ============== Collection ==============
 DAYS=1
@@ -38,6 +40,19 @@ need date
 need sed
 
 # ============== Helpers ==============
+load_env() {
+  if [[ ! -f "$ENV_FILE" ]]; then
+    log_warn "Environment file not found: ${ENV_FILE}"
+    return 0
+  fi
+
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
+  log_info "Loaded environment file: ${ENV_FILE}"
+}
+
 is_placeholder() {
   [[ "$1" == __*__ ]]
 }
@@ -857,6 +872,7 @@ collect_day() {
 
 main() {
   local i day
+  load_env
   validate_config
   log_info "Running: ${SCRIPT_PATH}"
 
