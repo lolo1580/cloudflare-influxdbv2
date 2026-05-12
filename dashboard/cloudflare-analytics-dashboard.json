@@ -64,7 +64,7 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "Latest total request count from cloudflare_analytics.cfRequestsAll.",
+      "description": "Total request count over the selected range from cloudflare_analytics.cfRequestsAll.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -123,7 +123,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"cfRequestsAll\")\n  |> last()\n  |> keep(columns: [\"_time\", \"_value\", \"zone\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"cfRequestsAll\")\n  |> group()\n  |> sum(column: \"_value\")\n  |> keep(columns: [\"_value\"])\n  |> yield(name: \"total_requests\")",
           "refId": "A"
         }
       ],
@@ -135,7 +135,7 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "Latest total bandwidth from cloudflare_analytics.cfBandwidthAll.",
+      "description": "Total bandwidth over the selected range from cloudflare_analytics.cfBandwidthAll.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -194,7 +194,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"cfBandwidthAll\")\n  |> last()\n  |> keep(columns: [\"_time\", \"_value\", \"zone\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"cfBandwidthAll\")\n  |> group()\n  |> sum(column: \"_value\")\n  |> keep(columns: [\"_value\"])\n  |> yield(name: \"total_bandwidth\")",
           "refId": "A"
         }
       ],
@@ -206,7 +206,7 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "Latest visit count from cloudflare_analytics.cfVisits.",
+      "description": "Total visit count over the selected range from cloudflare_analytics.cfVisits.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -261,7 +261,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"cfVisits\")\n  |> last()\n  |> keep(columns: [\"_time\", \"_value\", \"zone\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"cfVisits\")\n  |> group()\n  |> sum(column: \"_value\")\n  |> keep(columns: [\"_value\"])\n  |> yield(name: \"total_visits\")",
           "refId": "A"
         }
       ],
@@ -476,7 +476,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "always",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -528,7 +528,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"cfRequestsAll\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"zone\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"cfRequestsAll\")\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"zone\"])",
           "refId": "A"
         }
       ],
@@ -568,7 +568,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "always",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -620,7 +620,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"cfBandwidthAll\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"zone\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"cfBandwidthAll\")\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"zone\"])",
           "refId": "A"
         }
       ],
@@ -660,7 +660,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "always",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -712,7 +712,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"cfVisits\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"zone\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"cfVisits\")\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"zone\"])",
           "refId": "A"
         }
       ],
@@ -1145,7 +1145,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "always",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1197,7 +1197,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "metric = from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_hostname\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n\ntopHosts = metric\n  |> group(columns: [\"hostname\"])\n  |> last()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 5)\n  |> keep(columns: [\"hostname\"])\n\njoin(tables: {metric: metric, hosts: topHosts}, on: [\"hostname\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"hostname\"])",
+          "query": "metric = from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_hostname\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n\ntopHosts = metric\n  |> group(columns: [\"hostname\"])\n  |> last()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 5)\n  |> keep(columns: [\"hostname\"])\n\njoin(tables: {metric: metric, hosts: topHosts}, on: [\"hostname\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"hostname\"])",
           "refId": "A"
         }
       ],
@@ -1499,7 +1499,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "always",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1551,7 +1551,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_status\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"status\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_status\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"status\"])",
           "refId": "A"
         }
       ],
@@ -1740,7 +1740,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "always",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1792,7 +1792,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_cache\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"bandwidth\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"cache_status\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_cache\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"bandwidth\")\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"cache_status\"])",
           "refId": "A"
         }
       ],
@@ -1877,7 +1877,7 @@
   "schemaVersion": 39,
   "style": "dark",
   "tags": [
-    "cloudflare",
+    "laurentkeller.org",
     "influxdb",
     "observability",
     "noc",
@@ -1905,8 +1905,8 @@
       {
         "current": {
           "selected": true,
-          "text": "cloudflare",
-          "value": "cloudflare"
+          "text": "laurentkeller.org",
+          "value": "laurentkeller.org"
         },
         "hide": 0,
         "label": "Bucket",
@@ -1914,11 +1914,11 @@
         "options": [
           {
             "selected": true,
-            "text": "cloudflare",
-            "value": "cloudflare"
+            "text": "laurentkeller.org",
+            "value": "laurentkeller.org"
           }
         ],
-        "query": "cloudflare",
+        "query": "laurentkeller.org",
         "type": "custom"
       },
       {
