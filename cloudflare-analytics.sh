@@ -7,24 +7,24 @@ InfluxDBURL="http://192.168.xx.xx"
 InfluxDBPort="8086"
 InfluxDBBucket="__BUCKET_NAME__"
 InfluxDBOrg="__ORG_NAME__"
-InfluxDBToken="__INFLUX_TOKEN__"   # remplace
+InfluxDBToken="__INFLUX_TOKEN__"   # replace
 
 # ============== Cloudflare ==============
-# recommandé : API Token (scope Zone:Analytics:Read sur keller-laurent.org)
+# Recommended: API token with Zone:Analytics:Read scope on the target zone.
 CLOUDFLARE_API_TOKEN="__DEDICATED_API_TOKEN__"
 
-# fallback si tu n’utilises pas d’API token :
+# Fallback if you do not use an API token.
 CLOUDFLARE_GLOBAL_API_KEY=""
 CLOUDFLARE_EMAIL="__YOURMAIL__"
 
 # zone tag
 CLOUDFLARE_ZONE_TAG="__ZONEID__"
 
-# ============== Fenêtre ==============
-DAYS=7   # mets 1 si ton bucket a une rétention courte
+# ============== Time Window ==============
+DAYS=7   # Set to 1 if your bucket has a short retention period.
 
-# ============== Dépendances ==============
-need() { command -v "$1" >/dev/null 2>&1 || { echo "Manque dépendance: $1"; exit 1; }; }
+# ============== Dependencies ==============
+need() { command -v "$1" >/dev/null 2>&1 || { echo "Missing dependency: $1"; exit 1; }; }
 need jq
 need curl
 need date
@@ -42,7 +42,7 @@ require_value() {
   local name="$1"
   local value="$2"
   if [[ -z "$value" ]] || is_placeholder "$value"; then
-    echo "Configuration manquante: ${name}"
+    echo "Missing configuration: ${name}"
     exit 1
   fi
 }
@@ -77,7 +77,7 @@ write_influx() {
   code="${resp##*$'\n'}"
   body="${resp%$'\n'*}"
   if [[ "$code" != "204" ]]; then
-    echo "Influx write HTTP: $code — $body"
+    echo "Influx write HTTP: $code - $body"
     return 1
   else
     echo "Influx write HTTP: 204"
@@ -121,19 +121,19 @@ GRAPHQL_QUERY='query($zoneTag: String!, $ts: Date) {
 do_day() {
   local the_date="$1"          # YYYY-MM-DD
   local ts zone_tag
-  ts=$(date -u -d "${the_date} 12:00:00" +%s)  # 12:00 UTC (plus visible dans l’UI)
+  ts=$(date -u -d "${the_date} 12:00:00" +%s)  # 12:00 UTC is easier to read in the UI.
   zone_tag=$(printf "%s" "$CLOUDFLARE_ZONE_TAG" | escape_tag)
 
-  # payload JSON compact
+  # Compact JSON payload.
   local payload
   payload=$(jq -n --arg q "$GRAPHQL_QUERY" --arg z "$CLOUDFLARE_ZONE_TAG" --arg t "$the_date" \
             '{query:$q, variables:{zoneTag:$z, ts:$t}}')
 
-  # appel Cloudflare
+  # Cloudflare request.
   local resp
   resp=$(cf_call "$payload")
 
-  # erreurs GraphQL ?
+  # GraphQL errors.
   if [[ "$(echo "$resp" | jq '.errors|length // 0')" -gt 0 ]]; then
     echo "Cloudflare GraphQL errors for $the_date:"
     echo "$resp" | jq '.errors'
@@ -145,7 +145,7 @@ do_day() {
   len=$(echo "$resp" | jq "$base | length")
   [[ "$len" -eq 0 ]] && { echo "No data for $the_date"; return 0; }
 
-  # Totaux jour (somme des pays)
+  # Daily totals, summed across countries.
   local req_all bw_all visits_all
   req_all=$(   echo "$resp" | jq -r "$base | map(.count) | add // 0")
   bw_all=$(    echo "$resp" | jq -r "$base | map(.sum.edgeResponseBytes) | add // 0")
@@ -155,7 +155,7 @@ do_day() {
   echo "Write totals $the_date"
   write_influx "cloudflare_analytics,cfZone=${zone_tag} cfRequestsAll=${req_all}i,cfBandwidthAll=${bw_all},cfVisits=${visits_all}i ${ts}"
 
-  # Détail par pays
+  # Per-country detail.
   local j cc cc_tag reqs bytes visits
   for ((j=0; j<len; j++)); do
     cc=$(echo "$resp" | jq -r "${base}[$j].dimensions.clientCountryName // empty")
@@ -170,7 +170,7 @@ do_day() {
   done
 }
 
-# ============== Boucle des N derniers jours ==============
+# ============== Loop Over The Last N Days ==============
 validate_config
 
 for i in $(seq 0 $((DAYS-1))); do
