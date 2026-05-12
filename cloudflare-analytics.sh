@@ -452,7 +452,7 @@ collect_cache() {
   local day="$1"
   local start="$2"
   local end="$3"
-  local zone_tag response row requests bytes cached_requests cached_bytes hit_requests miss_requests hit_bytes miss_bytes timestamp query
+  local zone_tag response cache_status requests bandwidth _ timestamp query
 
   if ! is_enabled "$ENABLE_CACHE_METRICS"; then
     return 0
@@ -465,18 +465,22 @@ collect_cache() {
 query($zoneTag: String!, $start: Time!, $end: Time!) {
   viewer {
     zones(filter: { zoneTag: $zoneTag }) {
-      series: httpRequests1mGroups(
+      series: httpRequestsAdaptiveGroups(
         filter: {
           datetime_geq: $start
           datetime_lt: $end
+          requestSource: "eyeball"
         }
-        limit: 5000
+        limit: 20
+        orderBy: [count_DESC]
       ) {
+        count
         sum {
-          requests
-          bytes
-          cachedRequests
-          cachedBytes
+          edgeResponseBytes
+          visits
+        }
+        dimensions {
+          cacheStatus
         }
       }
     }
@@ -493,26 +497,13 @@ EOF
     return 0
   fi
 
-  row=$(read_http_1m_totals "$response") || {
-    log_warn "collect_cache skipped"
-    return 0
-  }
-
-  IFS=$'\t' read -r requests bytes cached_requests cached_bytes _ <<<"$row"
-  hit_requests=${cached_requests:-0}
-  hit_bytes=${cached_bytes:-0}
-  miss_requests=$(( ${requests:-0} - ${cached_requests:-0} ))
-  miss_bytes=$(( ${bytes:-0} - ${cached_bytes:-0} ))
-
-  write_point "cloudflare_analytics_cache" \
-    "zone=${zone_tag},cfZone=${zone_tag},date=$(escape_tag_value "$day"),cache_status=hit" \
-    "requests=${hit_requests}i,bandwidth=${hit_bytes}" \
-    "$timestamp"
-
-  write_point "cloudflare_analytics_cache" \
-    "zone=${zone_tag},cfZone=${zone_tag},date=$(escape_tag_value "$day"),cache_status=miss" \
-    "requests=${miss_requests}i,bandwidth=${miss_bytes}" \
-    "$timestamp"
+  while IFS=$'\t' read -r cache_status requests bandwidth _; do
+    [[ -z "${cache_status:-}" ]] && continue
+    write_point "cloudflare_analytics_cache" \
+      "zone=${zone_tag},cfZone=${zone_tag},date=$(escape_tag_value "$day"),cache_status=$(escape_tag_value "$cache_status")" \
+      "requests=${requests}i,bandwidth=${bandwidth}" \
+      "$timestamp"
+  done < <(read_top_groups "$response" "cacheStatus")
 }
 
 collect_status_codes() {
@@ -532,18 +523,22 @@ collect_status_codes() {
 query($zoneTag: String!, $start: Time!, $end: Time!) {
   viewer {
     zones(filter: { zoneTag: $zoneTag }) {
-      series: httpRequests1mGroups(
+      series: httpRequestsAdaptiveGroups(
         filter: {
           datetime_geq: $start
           datetime_lt: $end
+          requestSource: "eyeball"
         }
-        limit: 5000
+        limit: 100
+        orderBy: [count_DESC]
       ) {
+        count
         sum {
-          responseStatusMap {
-            edgeResponseStatus
-            requests
-          }
+          edgeResponseBytes
+          visits
+        }
+        dimensions {
+          edgeResponseStatus
         }
       }
     }
@@ -560,13 +555,13 @@ EOF
     return 0
   fi
 
-  while IFS=$'\t' read -r status requests; do
+  while IFS=$'\t' read -r status requests _ _; do
     [[ -z "${status:-}" ]] && continue
     write_point "cloudflare_analytics_status" \
       "zone=${zone_tag},cfZone=${zone_tag},date=$(escape_tag_value "$day"),status=$(escape_tag_value "$status")" \
       "requests=${requests}i" \
       "$timestamp"
-  done < <(read_status_rows "$response")
+  done < <(read_top_groups "$response" "edgeResponseStatus")
 }
 
 collect_threats() {
@@ -807,19 +802,22 @@ collect_content_types() {
 query($zoneTag: String!, $start: Time!, $end: Time!) {
   viewer {
     zones(filter: { zoneTag: $zoneTag }) {
-      series: httpRequests1mGroups(
+      series: httpRequestsAdaptiveGroups(
         filter: {
           datetime_geq: $start
           datetime_lt: $end
+          requestSource: "eyeball"
         }
-        limit: 5000
+        limit: 100
+        orderBy: [count_DESC]
       ) {
+        count
         sum {
-          contentTypeMap {
-            edgeResponseContentTypeName
-            requests
-            bytes
-          }
+          edgeResponseBytes
+          visits
+        }
+        dimensions {
+          edgeResponseContentTypeName
         }
       }
     }
@@ -836,13 +834,13 @@ EOF
     return 0
   fi
 
-  while IFS=$'\t' read -r content_type requests bytes; do
+  while IFS=$'\t' read -r content_type requests bytes _; do
     [[ -z "${content_type:-}" ]] && continue
     write_point "cloudflare_analytics_content_type" \
       "zone=${zone_tag},cfZone=${zone_tag},date=$(escape_tag_value "$day"),content_type=$(escape_tag_value "$content_type")" \
       "requests=${requests}i,bandwidth=${bytes}" \
       "$timestamp"
-  done < <(read_content_type_rows "$response")
+  done < <(read_top_groups "$response" "edgeResponseContentTypeName")
 }
 
 collect_day() {
