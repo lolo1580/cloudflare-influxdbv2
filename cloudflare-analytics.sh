@@ -325,16 +325,14 @@ aggregate_top_rows() {
 }
 
 build_query() {
-  local query="$1"
-  local zone_tag="$2"
-  local start="$3"
-  local end="$4"
+  local zone_tag="$1"
+  local start="$2"
+  local end="$3"
   jq -n \
-    --arg q "$query" \
     --arg zoneTag "$zone_tag" \
     --arg start "$start" \
     --arg end "$end" \
-    '{query:$q, variables:{zoneTag:$zoneTag, start:$start, end:$end}}'
+    '{zoneTag:$zoneTag, start:$start, end:$end}'
 }
 
 collect_totals() {
@@ -374,7 +372,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!) {
 }
 EOF
 
-  response=$(graphql_query "collect_totals" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || return 1
+  response=$(graphql_query "collect_totals" "$query" "$(build_query "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || return 1
   graphql_check_errors "collect_totals" fatal "$response" || return 1
 
   row=$(jq -r '
@@ -434,7 +432,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!) {
 }
 EOF
 
-  response=$(graphql_query "collect_countries" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
+  response=$(graphql_query "collect_countries" "$query" "$(build_query "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_countries skipped"
     return 0
   }
@@ -487,7 +485,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!) {
 }
 EOF
 
-  response=$(graphql_query "collect_cache" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
+  response=$(graphql_query "collect_cache" "$query" "$(build_query "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_cache skipped"
     return 0
   }
@@ -555,7 +553,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!) {
 }
 EOF
 
-  response=$(graphql_query "collect_status_codes" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
+  response=$(graphql_query "collect_status_codes" "$query" "$(build_query "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_status_codes skipped"
     return 0
   }
@@ -607,7 +605,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!) {
 }
 EOF
 
-  response=$(graphql_query "collect_threats" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
+  response=$(graphql_query "collect_threats" "$query" "$(build_query "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_threats skipped"
     return 0
   }
@@ -663,7 +661,7 @@ query(\$zoneTag: String!, \$start: Time!, \$end: Time!) {
 }
 EOF
 
-  response=$(graphql_query "collect_hostnames" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
+  response=$(graphql_query "collect_hostnames" "$query" "$(build_query "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_hostnames skipped"
     return 0
   }
@@ -720,7 +718,7 @@ query(\$zoneTag: String!, \$start: Time!, \$end: Time!) {
 }
 EOF
 
-  response=$(graphql_query "collect_paths" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
+  response=$(graphql_query "collect_paths" "$query" "$(build_query "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_paths skipped"
     return 0
   }
@@ -777,7 +775,7 @@ query(\$zoneTag: String!, \$start: Time!, \$end: Time!) {
 }
 EOF
 
-  response=$(graphql_query "collect_user_agents" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
+  response=$(graphql_query "collect_user_agents" "$query" "$(build_query "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_user_agents skipped"
     return 0
   }
@@ -833,7 +831,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!) {
 }
 EOF
 
-  response=$(graphql_query "collect_content_types" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
+  response=$(graphql_query "collect_content_types" "$query" "$(build_query "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_content_types skipped"
     return 0
   }
