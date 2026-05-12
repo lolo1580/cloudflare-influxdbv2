@@ -283,7 +283,7 @@ Import steps:
 Dashboard sections:
 - Overview: total requests, bandwidth, visits, top country, top hostname, top path.
 - Traffic: requests, bandwidth, and visits over time.
-- Countries: request and bandwidth geomaps plus a top countries table.
+- Countries: request geomap plus a top countries table.
 - Hostnames: top hostnames table and top 5 hostnames over time.
 - Paths: top paths table and top 10 paths bar chart.
 - Status Codes: HTTP status distribution, timeline, and 4xx/5xx stat when `cloudflare_analytics_status` exists.
@@ -299,7 +299,8 @@ Screenshot placeholders:
 
 ## Systemd
 
-Use a oneshot service plus a timer:
+Use a oneshot service plus a timer. Cloudflare daily analytics can lag by several
+hours, so the recommended schedule is once per day after the data has settled.
 
 ```ini
 [Unit]
@@ -317,12 +318,11 @@ ExecStart=/home/YOUR_USERNAME/gh/cloudflare-influxdbv2/cloudflare-analytics.sh
 
 ```ini
 [Unit]
-Description=Run Cloudflare Analytics to InfluxDB every 5 minutes
+Description=Run Cloudflare Analytics to InfluxDB daily
 
 [Timer]
-OnBootSec=5min
-OnUnitActiveSec=5min
-AccuracySec=30s
+OnCalendar=*-*-* 04:30:00
+AccuracySec=15min
 Persistent=true
 
 [Install]
