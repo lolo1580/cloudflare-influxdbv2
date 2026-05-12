@@ -4,6 +4,7 @@ set -Eeuo pipefail
 SCRIPT_PATH="$(readlink -f "$0")"
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 ENV_FILE="${ENV_FILE:-${SCRIPT_DIR}/.env}"
+SCRIPT_VERSION="2026-05-12.1"
 
 log_info() { printf '[INFO] %s\n' "$*"; }
 log_warn() { printf '[WARN] %s\n' "$*"; }
@@ -488,12 +489,12 @@ query($zoneTag: String!, $start: Time!, $end: Time!) {
 }
 EOF
 
-  response=$(graphql_query "collect_cache" "$query" "$(build_query "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
+  response=$(graphql_query "collect_cache[httpRequestsAdaptiveGroups.cacheStatus]" "$query" "$(build_query "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_cache skipped"
     return 0
   }
 
-  if ! graphql_check_errors "collect_cache" warn "$response"; then
+  if ! graphql_check_errors "collect_cache[httpRequestsAdaptiveGroups.cacheStatus]" warn "$response"; then
     return 0
   fi
 
@@ -546,12 +547,12 @@ query($zoneTag: String!, $start: Time!, $end: Time!) {
 }
 EOF
 
-  response=$(graphql_query "collect_status_codes" "$query" "$(build_query "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
+  response=$(graphql_query "collect_status_codes[httpRequestsAdaptiveGroups.edgeResponseStatus]" "$query" "$(build_query "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_status_codes skipped"
     return 0
   }
 
-  if ! graphql_check_errors "collect_status_codes" warn "$response"; then
+  if ! graphql_check_errors "collect_status_codes[httpRequestsAdaptiveGroups.edgeResponseStatus]" warn "$response"; then
     return 0
   fi
 
@@ -597,12 +598,12 @@ query($zoneTag: String!, $start: Time!, $end: Time!) {
 }
 EOF
 
-  response=$(graphql_query "collect_threats" "$query" "$(build_query "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
+  response=$(graphql_query "collect_threats[httpRequests1mGroups.threats]" "$query" "$(build_query "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_threats skipped"
     return 0
   }
 
-  if ! graphql_check_errors "collect_threats" warn "$response"; then
+  if ! graphql_check_errors "collect_threats[httpRequests1mGroups.threats]" warn "$response"; then
     return 0
   fi
 
@@ -825,12 +826,12 @@ query($zoneTag: String!, $start: Time!, $end: Time!) {
 }
 EOF
 
-  response=$(graphql_query "collect_content_types" "$query" "$(build_query "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
+  response=$(graphql_query "collect_content_types[httpRequestsAdaptiveGroups.edgeResponseContentTypeName]" "$query" "$(build_query "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_content_types skipped"
     return 0
   }
 
-  if ! graphql_check_errors "collect_content_types" warn "$response"; then
+  if ! graphql_check_errors "collect_content_types[httpRequestsAdaptiveGroups.edgeResponseContentTypeName]" warn "$response"; then
     return 0
   fi
 
@@ -867,6 +868,7 @@ main() {
   load_env
   validate_config
   log_info "Running: ${SCRIPT_PATH}"
+  log_info "Script version: ${SCRIPT_VERSION}"
 
   for ((i=0; i<DAYS; i++)); do
     day=$(date -u -d "-${i} day" +'%Y-%m-%d')
