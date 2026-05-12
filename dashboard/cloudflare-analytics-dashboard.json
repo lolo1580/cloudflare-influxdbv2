@@ -109,7 +109,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "",
+          "fields": "/^_value$/",
           "values": false
         },
         "showPercentChange": false,
@@ -180,7 +180,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "",
+          "fields": "/^_value$/",
           "values": false
         },
         "showPercentChange": false,
@@ -247,7 +247,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "",
+          "fields": "/^_value$/",
           "values": false
         },
         "showPercentChange": false,
@@ -301,7 +301,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "/^country$/",
+          "fields": "/^_value$/",
           "values": false
         },
         "showPercentChange": false,
@@ -315,7 +315,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_country\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> group(columns: [\"country\"])\n  |> last()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 1)\n  |> keep(columns: [\"country\", \"_value\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_country\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> group(columns: [\"country\"])\n  |> last()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 1)\n  |> map(fn: (r) => ({_time: r._time, _value: r.country, requests: r._value}))\n  |> keep(columns: [\"_time\", \"_value\", \"requests\"])",
           "refId": "A"
         }
       ],
@@ -355,7 +355,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "/^hostname$/",
+          "fields": "/^_value$/",
           "values": false
         },
         "showPercentChange": false,
@@ -369,7 +369,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_hostname\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> group(columns: [\"hostname\"])\n  |> last()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 1)\n  |> keep(columns: [\"hostname\", \"_value\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_hostname\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> group(columns: [\"hostname\"])\n  |> last()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 1)\n  |> map(fn: (r) => ({_time: r._time, _value: r.hostname, requests: r._value}))\n  |> keep(columns: [\"_time\", \"_value\", \"requests\"])",
           "refId": "A"
         }
       ],
@@ -409,7 +409,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "/^path$/",
+          "fields": "/^_value$/",
           "values": false
         },
         "showPercentChange": false,
@@ -423,7 +423,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_path\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> group(columns: [\"path\"])\n  |> last()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 1)\n  |> keep(columns: [\"path\", \"_value\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_path\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> group(columns: [\"path\"])\n  |> last()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 1)\n  |> map(fn: (r) => ({_time: r._time, _value: r.path, requests: r._value}))\n  |> keep(columns: [\"_time\", \"_value\", \"requests\"])",
           "refId": "A"
         }
       ],
@@ -792,12 +792,12 @@
               "showLegend": true,
               "style": {
                 "color": {
-                  "field": "requests",
+                  "field": "_value",
                   "fixed": "dark-green"
                 },
                 "opacity": 0.75,
                 "size": {
-                  "field": "requests",
+                  "field": "_value",
                   "fixed": 8,
                   "max": 28,
                   "min": 5
@@ -828,7 +828,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_country\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> group(columns: [\"country\"])\n  |> last()\n  |> group()\n  |> rename(columns: {_value: \"requests\"})\n  |> keep(columns: [\"country\", \"requests\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_country\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> group(columns: [\"country\"])\n  |> last()\n  |> group()\n  |> keep(columns: [\"_time\", \"country\", \"_value\"])",
           "refId": "A"
         }
       ],
@@ -878,12 +878,12 @@
               "showLegend": true,
               "style": {
                 "color": {
-                  "field": "bandwidth",
+                  "field": "_value",
                   "fixed": "blue"
                 },
                 "opacity": 0.75,
                 "size": {
-                  "field": "bandwidth",
+                  "field": "_value",
                   "fixed": 8,
                   "max": 28,
                   "min": 5
@@ -914,7 +914,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_country\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"bandwidth\")\n  |> group(columns: [\"country\"])\n  |> last()\n  |> group()\n  |> rename(columns: {_value: \"bandwidth\"})\n  |> keep(columns: [\"country\", \"bandwidth\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_country\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"bandwidth\")\n  |> group(columns: [\"country\"])\n  |> last()\n  |> group()\n  |> keep(columns: [\"_time\", \"country\", \"_value\"])",
           "refId": "A"
         }
       ],
@@ -1009,7 +1009,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_country\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\" or r._field == \"bandwidth\" or r._field == \"visits\")\n  |> group(columns: [\"country\", \"_field\"])\n  |> last()\n  |> group()\n  |> pivot(rowKey: [\"country\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> sort(columns: [\"requests\"], desc: true)\n  |> limit(n: 20)\n  |> keep(columns: [\"country\", \"requests\", \"bandwidth\", \"visits\"])",
+          "query": "base = from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_country\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n\nrequests = base\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> group(columns: [\"country\"])\n  |> last()\n  |> rename(columns: {_value: \"requests\"})\n  |> keep(columns: [\"country\", \"requests\"])\n\nbandwidth = base\n  |> filter(fn: (r) => r._field == \"bandwidth\")\n  |> group(columns: [\"country\"])\n  |> last()\n  |> rename(columns: {_value: \"bandwidth\"})\n  |> keep(columns: [\"country\", \"bandwidth\"])\n\nvisits = base\n  |> filter(fn: (r) => r._field == \"visits\")\n  |> group(columns: [\"country\"])\n  |> last()\n  |> rename(columns: {_value: \"visits\"})\n  |> keep(columns: [\"country\", \"visits\"])\n\ncountryTraffic = join(tables: {requests: requests, bandwidth: bandwidth}, on: [\"country\"])\n\njoin(tables: {traffic: countryTraffic, visits: visits}, on: [\"country\"])\n  |> group()\n  |> sort(columns: [\"requests\"], desc: true)\n  |> limit(n: 20)\n  |> keep(columns: [\"country\", \"requests\", \"bandwidth\", \"visits\"])",
           "refId": "A"
         }
       ],
@@ -1105,7 +1105,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_hostname\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\" or r._field == \"bandwidth\")\n  |> group(columns: [\"hostname\", \"_field\"])\n  |> last()\n  |> group()\n  |> pivot(rowKey: [\"hostname\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> sort(columns: [\"requests\"], desc: true)\n  |> limit(n: 20)\n  |> keep(columns: [\"hostname\", \"requests\", \"bandwidth\"])",
+          "query": "base = from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_hostname\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n\nrequests = base\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> group(columns: [\"hostname\"])\n  |> last()\n  |> rename(columns: {_value: \"requests\"})\n  |> keep(columns: [\"hostname\", \"requests\"])\n\nbandwidth = base\n  |> filter(fn: (r) => r._field == \"bandwidth\")\n  |> group(columns: [\"hostname\"])\n  |> last()\n  |> rename(columns: {_value: \"bandwidth\"})\n  |> keep(columns: [\"hostname\", \"bandwidth\"])\n\njoin(tables: {requests: requests, bandwidth: bandwidth}, on: [\"hostname\"])\n  |> group()\n  |> sort(columns: [\"requests\"], desc: true)\n  |> limit(n: 20)\n  |> keep(columns: [\"hostname\", \"requests\", \"bandwidth\"])",
           "refId": "A"
         }
       ],
@@ -1293,7 +1293,7 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_path\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\" or r._field == \"bandwidth\")\n  |> group(columns: [\"path\", \"_field\"])\n  |> last()\n  |> group()\n  |> pivot(rowKey: [\"path\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> sort(columns: [\"requests\"], desc: true)\n  |> limit(n: 20)\n  |> keep(columns: [\"path\", \"requests\", \"bandwidth\"])",
+          "query": "base = from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_path\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n\nrequests = base\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> group(columns: [\"path\"])\n  |> last()\n  |> rename(columns: {_value: \"requests\"})\n  |> keep(columns: [\"path\", \"requests\"])\n\nbandwidth = base\n  |> filter(fn: (r) => r._field == \"bandwidth\")\n  |> group(columns: [\"path\"])\n  |> last()\n  |> rename(columns: {_value: \"bandwidth\"})\n  |> keep(columns: [\"path\", \"bandwidth\"])\n\njoin(tables: {requests: requests, bandwidth: bandwidth}, on: [\"path\"])\n  |> group()\n  |> sort(columns: [\"requests\"], desc: true)\n  |> limit(n: 20)\n  |> keep(columns: [\"path\", \"requests\", \"bandwidth\"])",
           "refId": "A"
         }
       ],
