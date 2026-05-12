@@ -128,7 +128,8 @@
         }
       ],
       "title": "Total Requests",
-      "type": "stat"
+      "type": "stat",
+      "transparent": false
     },
     {
       "datasource": {
@@ -199,7 +200,8 @@
         }
       ],
       "title": "Total Bandwidth",
-      "type": "stat"
+      "type": "stat",
+      "transparent": false
     },
     {
       "datasource": {
@@ -266,7 +268,8 @@
         }
       ],
       "title": "Total Visits",
-      "type": "stat"
+      "type": "stat",
+      "transparent": false
     },
     {
       "datasource": {
@@ -320,7 +323,8 @@
         }
       ],
       "title": "Top Country",
-      "type": "stat"
+      "type": "stat",
+      "transparent": false
     },
     {
       "datasource": {
@@ -374,7 +378,8 @@
         }
       ],
       "title": "Top Hostname",
-      "type": "stat"
+      "type": "stat",
+      "transparent": false
     },
     {
       "datasource": {
@@ -428,7 +433,8 @@
         }
       ],
       "title": "Top Path",
-      "type": "stat"
+      "type": "stat",
+      "transparent": false
     },
     {
       "collapsed": false,
@@ -533,7 +539,8 @@
         }
       ],
       "title": "Requests Over Time",
-      "type": "timeseries"
+      "type": "timeseries",
+      "transparent": false
     },
     {
       "datasource": {
@@ -625,7 +632,8 @@
         }
       ],
       "title": "Bandwidth Over Time",
-      "type": "timeseries"
+      "type": "timeseries",
+      "transparent": false
     },
     {
       "datasource": {
@@ -717,7 +725,8 @@
         }
       ],
       "title": "Visits Over Time",
-      "type": "timeseries"
+      "type": "timeseries",
+      "transparent": false
     },
     {
       "collapsed": false,
@@ -833,7 +842,8 @@
         }
       ],
       "title": "Requests By Country",
-      "type": "geomap"
+      "type": "geomap",
+      "transparent": false
     },
     {
       "datasource": {
@@ -919,7 +929,8 @@
         }
       ],
       "title": "Bandwidth By Country",
-      "type": "geomap"
+      "type": "geomap",
+      "transparent": false
     },
     {
       "datasource": {
@@ -1014,7 +1025,8 @@
         }
       ],
       "title": "Top Countries",
-      "type": "table"
+      "type": "table",
+      "transparent": false
     },
     {
       "collapsed": false,
@@ -1110,7 +1122,8 @@
         }
       ],
       "title": "Top Hostnames",
-      "type": "table"
+      "type": "table",
+      "transparent": false
     },
     {
       "datasource": {
@@ -1202,7 +1215,8 @@
         }
       ],
       "title": "Top 5 Hostnames Over Time",
-      "type": "timeseries"
+      "type": "timeseries",
+      "transparent": false
     },
     {
       "collapsed": false,
@@ -1298,7 +1312,8 @@
         }
       ],
       "title": "Top Paths",
-      "type": "table"
+      "type": "table",
+      "transparent": false
     },
     {
       "datasource": {
@@ -1386,7 +1401,8 @@
         }
       ],
       "title": "Top 10 Paths",
-      "type": "barchart"
+      "type": "barchart",
+      "transparent": false
     },
     {
       "collapsed": false,
@@ -1464,7 +1480,8 @@
         }
       ],
       "title": "HTTP Status Distribution",
-      "type": "piechart"
+      "type": "piechart",
+      "transparent": false
     },
     {
       "datasource": {
@@ -1556,7 +1573,8 @@
         }
       ],
       "title": "Status Codes Over Time",
-      "type": "timeseries"
+      "type": "timeseries",
+      "transparent": false
     },
     {
       "datasource": {
@@ -1627,7 +1645,8 @@
         }
       ],
       "title": "4xx / 5xx Requests",
-      "type": "stat"
+      "type": "stat",
+      "transparent": false
     },
     {
       "collapsed": false,
@@ -1705,7 +1724,8 @@
         }
       ],
       "title": "Cache HIT/MISS Ratio",
-      "type": "piechart"
+      "type": "piechart",
+      "transparent": false
     },
     {
       "datasource": {
@@ -1797,7 +1817,8 @@
         }
       ],
       "title": "Cached vs Uncached Bandwidth",
-      "type": "timeseries"
+      "type": "timeseries",
+      "transparent": false
     },
     {
       "datasource": {
@@ -1870,7 +1891,8 @@
         }
       ],
       "title": "Cache Efficiency",
-      "type": "stat"
+      "type": "stat",
+      "transparent": false
     }
   ],
   "refresh": "30s",
