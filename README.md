@@ -254,6 +254,49 @@ The script handles this by:
 
 Bot score / bot class metrics are not collected by default here because Cloudflare documents bot analytics separately from the essential HTTP analytics dataset, and those fields are not guaranteed on a Free zone.
 
+## Grafana Dashboard
+
+An importable Grafana 10+ dashboard is available at:
+
+```text
+dashboard/cloudflare-analytics-dashboard.json
+```
+
+It is built only from measurements written by `cloudflare-analytics.sh`:
+- `cloudflare_analytics`
+- `cloudflare_analytics_country`
+- `cloudflare_analytics_hostname`
+- `cloudflare_analytics_path`
+- `cloudflare_analytics_cache` when present
+- `cloudflare_analytics_status` when present
+
+The dashboard does not use unsupported measurements such as threats, user agents, or content types by default. Cache and status sections use hidden Grafana variables based on `schema.measurements()` so their panels repeat only when the corresponding measurement exists in the selected bucket.
+
+Import steps:
+
+1. In Grafana, open `Dashboards` -> `New` -> `Import`.
+2. Upload `dashboard/cloudflare-analytics-dashboard.json`.
+3. Select your InfluxDB v2 datasource when Grafana asks for `DS_INFLUXDB`.
+4. Set the `bucket` variable to your bucket name, for example `cloudflare`.
+5. Select `zone` or leave it on `All`.
+
+Dashboard sections:
+- Overview: total requests, bandwidth, visits, top country, top hostname, top path.
+- Traffic: requests, bandwidth, and visits over time.
+- Countries: request and bandwidth geomaps plus a top countries table.
+- Hostnames: top hostnames table and top 5 hostnames over time.
+- Paths: top paths table and top 10 paths bar chart.
+- Status Codes: HTTP status distribution, timeline, and 4xx/5xx stat when `cloudflare_analytics_status` exists.
+- Cache: HIT/MISS ratio, cached vs uncached bandwidth, and cache efficiency when `cloudflare_analytics_cache` exists.
+
+Screenshot placeholders:
+
+```markdown
+![Cloudflare dashboard overview](docs/screenshots/grafana-overview.png)
+![Cloudflare countries geomap](docs/screenshots/grafana-countries.png)
+![Cloudflare cache and status](docs/screenshots/grafana-cache-status.png)
+```
+
 ## Systemd
 
 Use a oneshot service plus a timer:
