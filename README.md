@@ -1,13 +1,10 @@
 # Cloudflare Analytics to InfluxDB v2
 
-This script collects Cloudflare metrics using the GraphQL API and pushes them to an InfluxDB v2 bucket. It is designed to feed a Grafana dashboard (e.g., Jorge de la Cruz’s dashboard) with the following metrics:
+This script collects Cloudflare metrics using the GraphQL API and pushes them to an InfluxDB v2 bucket. It is designed to feed a Grafana dashboard with the following metrics:
 
-- Bandwidth (`bytes`, `cached_bytes`)
-- Number of requests (`requests`, `cached_requests`)
-- Number of threats (`threats`)
-- Page views (`pageviews`)
-- Unique visitors (`uniques`)
-- Request distribution by country (`country_requests`)
+- Daily totals: `cfRequestsAll`, `cfBandwidthAll`, `cfVisits`
+- Per-country daily metrics: `requests`, `bandwidth`, `visits`
+- Tags: `cfZone`, and `country` on per-country points
 
 ## Prerequisites
 
@@ -17,6 +14,7 @@ This script collects Cloudflare metrics using the GraphQL API and pushes them to
    - `bash` (version 4+)
    - `curl` (for HTTP requests)
    - `jq` (for JSON parsing)
+   - GNU `date` and `seq` (usually provided by coreutils on Linux)
    - Network access to `api.cloudflare.com` and the InfluxDB instance
 
 ## Installation
@@ -46,20 +44,25 @@ InfluxDBBucket="cloudflare"
 InfluxDBOrg="YourOrgName"
 InfluxDBToken="your_influxdb_token"
 
-cloudflareapikey="your_cloudflare_token"
-cloudflarezone="your_cloudflare_zone_id"
-cloudflareemail="your_cloudflare_email"
+CLOUDFLARE_API_TOKEN="your_cloudflare_api_token"
+CLOUDFLARE_ZONE_TAG="your_cloudflare_zone_id"
+
+# Optional fallback if you do not use an API token:
+CLOUDFLARE_GLOBAL_API_KEY=""
+CLOUDFLARE_EMAIL="your_cloudflare_email"
 ```
+
+The recommended Cloudflare authentication method is a dedicated API token with `Zone:Analytics:Read` on the target zone. The script exits early if required values are empty or still set to placeholders.
 
 ## Script Workflow
 
-1. Defines the last 24 hours as the time range.
+1. Defines the last `DAYS` calendar days as the time range.
 2. Sends a GraphQL request to Cloudflare to retrieve:
-   - Daily metrics: `bytes`, `cachedBytes`, `requests`, `cachedRequests`, `threats`, `pageViews`, and `countryMap`
-   - Unique visitors (`uniques`)
+   - Daily totals derived from `httpRequestsAdaptiveGroups`
+   - Per-country request, bandwidth, and visit totals
 3. Parses and transforms data into InfluxDB Line Protocol.
 4. Pushes each metric and country-specific data to InfluxDB.
-5. Sends a test point for debugging.
+5. Fails with a non-zero exit code if Cloudflare returns GraphQL errors or InfluxDB rejects a write.
 
 ## Manual Execution
 
@@ -124,18 +127,19 @@ influx query 'from(bucket: "cloudflare") |> range(start: -7d) |> limit(n: 10)' \
 Use the InfluxDB Data Explorer:
 - Select the `cloudflare` bucket
 - Pick the last 7 days as time range
-- Use measurement `cloudflare`, fields (e.g., bytes, requests)
-- For per-country stats, use the tag `country` and field `country_requests`
+- Use measurement `cloudflare_analytics` for daily totals
+- Use fields `cfRequestsAll`, `cfBandwidthAll`, `cfVisits`
+- For per-country stats, use measurement `cloudflare_analytics_country`, tag `country`, and fields `requests`, `bandwidth`, `visits`
 
 ## Grafana Dashboard
 
-Import Jorge de la Cruz’s dashboard or your custom one.
+Import or build a dashboard that matches the measurement names and fields written by this script.
 - Data source: InfluxDB v2 with `http://<host>:8086`, org, bucket, token.
 - Variable `zone`: value is your `zone_id`
 - Recommended time range: last 7 days or 24 hours
 
 ## Customization
 
-- Adjust `back_seconds` to collect a longer range
+- Adjust `DAYS` to collect a longer or shorter range
 - Extend GraphQL query for more fields (HTTP status, browsers)
 - Change timer interval via `OnUnitActiveSec` in the `.timer` file
