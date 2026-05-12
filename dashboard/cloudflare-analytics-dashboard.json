@@ -1398,7 +1398,6 @@
       },
       "id": 50,
       "panels": [],
-      "repeat": "statusMeasurement",
       "repeatDirection": "h",
       "title": "Status Codes",
       "type": "row"
@@ -1408,7 +1407,7 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "HTTP status distribution. This panel repeats only when cloudflare_analytics_status exists.",
+      "description": "HTTP status distribution.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1454,14 +1453,13 @@
         }
       },
       "pluginVersion": "10.0.0",
-      "repeat": "statusMeasurement",
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"${statusMeasurement}\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> group(columns: [\"status\"])\n  |> last()\n  |> keep(columns: [\"status\", \"_value\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_status\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> group(columns: [\"status\"])\n  |> last()\n  |> keep(columns: [\"status\", \"_value\"])",
           "refId": "A"
         }
       ],
@@ -1473,7 +1471,7 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "HTTP status counts over time. This panel repeats only when cloudflare_analytics_status exists.",
+      "description": "HTTP status counts over time.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1547,14 +1545,13 @@
         }
       },
       "pluginVersion": "10.0.0",
-      "repeat": "statusMeasurement",
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"${statusMeasurement}\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"status\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_status\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"status\"])",
           "refId": "A"
         }
       ],
@@ -1566,7 +1563,7 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "Latest 4xx and 5xx counts. This panel repeats only when cloudflare_analytics_status exists.",
+      "description": "Latest 4xx and 5xx counts.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1619,14 +1616,13 @@
         "wideLayout": true
       },
       "pluginVersion": "10.0.0",
-      "repeat": "statusMeasurement",
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"${statusMeasurement}\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> filter(fn: (r) => r.status =~ /^4/ or r.status =~ /^5/)\n  |> group(columns: [\"status\"])\n  |> last()\n  |> group()\n  |> sum(column: \"_value\")\n  |> keep(columns: [\"_value\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_status\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> filter(fn: (r) => r.status =~ /^4/ or r.status =~ /^5/)\n  |> group(columns: [\"status\"])\n  |> last()\n  |> group()\n  |> sum(column: \"_value\")\n  |> keep(columns: [\"_value\"])",
           "refId": "A"
         }
       ],
@@ -1643,7 +1639,6 @@
       },
       "id": 60,
       "panels": [],
-      "repeat": "cacheMeasurement",
       "repeatDirection": "h",
       "title": "Cache",
       "type": "row"
@@ -1653,7 +1648,7 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "Cache hit/miss distribution. This panel repeats only when cloudflare_analytics_cache exists.",
+      "description": "Cache hit/miss distribution.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1699,14 +1694,13 @@
         }
       },
       "pluginVersion": "10.0.0",
-      "repeat": "cacheMeasurement",
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"${cacheMeasurement}\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> group(columns: [\"cache_status\"])\n  |> last()\n  |> keep(columns: [\"cache_status\", \"_value\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_cache\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> group(columns: [\"cache_status\"])\n  |> last()\n  |> keep(columns: [\"cache_status\", \"_value\"])",
           "refId": "A"
         }
       ],
@@ -1718,7 +1712,7 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "Bandwidth by cache status. This panel repeats only when cloudflare_analytics_cache exists.",
+      "description": "Bandwidth by cache status.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1792,14 +1786,13 @@
         }
       },
       "pluginVersion": "10.0.0",
-      "repeat": "cacheMeasurement",
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"${cacheMeasurement}\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"bandwidth\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"cache_status\"])",
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_cache\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"bandwidth\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_value\", \"cache_status\"])",
           "refId": "A"
         }
       ],
@@ -1811,7 +1804,7 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "Request cache efficiency percentage. This panel repeats only when cloudflare_analytics_cache exists.",
+      "description": "Request cache efficiency percentage.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1866,14 +1859,13 @@
         "wideLayout": true
       },
       "pluginVersion": "10.0.0",
-      "repeat": "cacheMeasurement",
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "data = from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"${cacheMeasurement}\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> group(columns: [\"cache_status\"])\n  |> last()\n  |> group()\n\ntotal = data\n  |> sum(column: \"_value\")\n  |> rename(columns: {_value: \"total\"})\n  |> map(fn: (r) => ({r with join_key: \"cache\"}))\n  |> keep(columns: [\"join_key\", \"total\"])\n\nhit = data\n  |> filter(fn: (r) => r.cache_status =~ /hit|HIT|Hit/)\n  |> sum(column: \"_value\")\n  |> rename(columns: {_value: \"hit\"})\n  |> map(fn: (r) => ({r with join_key: \"cache\"}))\n  |> keep(columns: [\"join_key\", \"hit\"])\n\njoin(tables: {hit: hit, total: total}, on: [\"join_key\"])\n  |> map(fn: (r) => ({_time: now(), _value: if r.total == 0 then 0.0 else float(v: r.hit) / float(v: r.total) * 100.0}))\n  |> keep(columns: [\"_time\", \"_value\"])",
+          "query": "data = from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics_cache\")\n  |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/)\n  |> filter(fn: (r) => r._field == \"requests\")\n  |> group(columns: [\"cache_status\"])\n  |> last()\n  |> group()\n\ntotal = data\n  |> sum(column: \"_value\")\n  |> rename(columns: {_value: \"total\"})\n  |> map(fn: (r) => ({r with join_key: \"cache\"}))\n  |> keep(columns: [\"join_key\", \"total\"])\n\nhit = data\n  |> filter(fn: (r) => r.cache_status =~ /hit|HIT|Hit/)\n  |> sum(column: \"_value\")\n  |> rename(columns: {_value: \"hit\"})\n  |> map(fn: (r) => ({r with join_key: \"cache\"}))\n  |> keep(columns: [\"join_key\", \"hit\"])\n\njoin(tables: {hit: hit, total: total}, on: [\"join_key\"])\n  |> map(fn: (r) => ({_time: now(), _value: if r.total == 0 then 0.0 else float(v: r.hit) / float(v: r.total) * 100.0}))\n  |> keep(columns: [\"_time\", \"_value\"])",
           "refId": "A"
         }
       ],
@@ -1939,6 +1931,7 @@
           "type": "influxdb",
           "uid": "${DS_INFLUXDB}"
         },
+        "allValue": ".*",
         "definition": "from(bucket: \"${bucket}\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_analytics\")\n  |> keep(columns: [\"zone\"])\n  |> distinct(column: \"zone\")\n  |> rename(columns: {zone: \"_value\"})",
         "hide": 0,
         "includeAll": true,
@@ -1950,50 +1943,6 @@
         "refresh": 2,
         "regex": "",
         "sort": 1,
-        "type": "query"
-      },
-      {
-        "current": {
-          "selected": true,
-          "text": "All",
-          "value": "$__all"
-        },
-        "datasource": {
-          "type": "influxdb",
-          "uid": "${DS_INFLUXDB}"
-        },
-        "definition": "import \"influxdata/influxdb/schema\"\nschema.measurements(bucket: \"${bucket}\")\n  |> filter(fn: (r) => r._value == \"cloudflare_analytics_cache\")",
-        "hide": 2,
-        "includeAll": true,
-        "multi": true,
-        "name": "cacheMeasurement",
-        "options": [],
-        "query": "import \"influxdata/influxdb/schema\"\nschema.measurements(bucket: \"${bucket}\")\n  |> filter(fn: (r) => r._value == \"cloudflare_analytics_cache\")",
-        "refresh": 2,
-        "regex": "",
-        "sort": 0,
-        "type": "query"
-      },
-      {
-        "current": {
-          "selected": true,
-          "text": "All",
-          "value": "$__all"
-        },
-        "datasource": {
-          "type": "influxdb",
-          "uid": "${DS_INFLUXDB}"
-        },
-        "definition": "import \"influxdata/influxdb/schema\"\nschema.measurements(bucket: \"${bucket}\")\n  |> filter(fn: (r) => r._value == \"cloudflare_analytics_status\")",
-        "hide": 2,
-        "includeAll": true,
-        "multi": true,
-        "name": "statusMeasurement",
-        "options": [],
-        "query": "import \"influxdata/influxdb/schema\"\nschema.measurements(bucket: \"${bucket}\")\n  |> filter(fn: (r) => r._value == \"cloudflare_analytics_status\")",
-        "refresh": 2,
-        "regex": "",
-        "sort": 0,
         "type": "query"
       }
     ]
