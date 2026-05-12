@@ -314,14 +314,12 @@ build_query() {
   local zone_tag="$2"
   local start="$3"
   local end="$4"
-  local limit="$5"
   jq -n \
     --arg q "$query" \
     --arg zoneTag "$zone_tag" \
     --arg start "$start" \
     --arg end "$end" \
-    --argjson limit "$limit" \
-    '{query:$q, variables:{zoneTag:$zoneTag, start:$start, end:$end, limit:$limit}}'
+    '{query:$q, variables:{zoneTag:$zoneTag, start:$start, end:$end}}'
 }
 
 collect_totals() {
@@ -335,7 +333,7 @@ collect_totals() {
   ts=$(day_timestamp "$day")
 
   read -r -d '' query <<'EOF' || true
-query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
+query($zoneTag: String!, $start: Time!, $end: Time!) {
   viewer {
     zones(filter: { zoneTag: $zoneTag }) {
       series: httpRequestsAdaptiveGroups(
@@ -344,7 +342,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
           datetime_lt: $end
           requestSource: "eyeball"
         }
-        limit: $limit
+        limit: 5000
         orderBy: [count_DESC]
       ) {
         count
@@ -361,7 +359,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
 }
 EOF
 
-  response=$(graphql_query "collect_totals" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end" "5000")") || return 1
+  response=$(graphql_query "collect_totals" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || return 1
   graphql_check_errors "collect_totals" fatal "$response" || return 1
 
   row=$(jq -r '
@@ -395,7 +393,7 @@ collect_countries() {
   timestamp=$(day_timestamp "$day")
 
   read -r -d '' query <<'EOF' || true
-query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
+query($zoneTag: String!, $start: Time!, $end: Time!) {
   viewer {
     zones(filter: { zoneTag: $zoneTag }) {
       series: httpRequestsAdaptiveGroups(
@@ -404,7 +402,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
           datetime_lt: $end
           requestSource: "eyeball"
         }
-        limit: $limit
+        limit: 5000
         orderBy: [count_DESC]
       ) {
         count
@@ -421,7 +419,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
 }
 EOF
 
-  response=$(graphql_query "collect_countries" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end" "5000")") || {
+  response=$(graphql_query "collect_countries" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_countries skipped"
     return 0
   }
@@ -451,7 +449,7 @@ collect_cache() {
   timestamp=$(day_timestamp "$day")
 
   read -r -d '' query <<'EOF' || true
-query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
+query($zoneTag: String!, $start: Time!, $end: Time!) {
   viewer {
     zones(filter: { zoneTag: $zoneTag }) {
       series: httpRequests1mGroups(
@@ -460,7 +458,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
           datetime_lt: $end
           requestSource: "eyeball"
         }
-        limit: $limit
+        limit: 5000
       ) {
         sum {
           requests
@@ -474,7 +472,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
 }
 EOF
 
-  response=$(graphql_query "collect_cache" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end" "5000")") || {
+  response=$(graphql_query "collect_cache" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_cache skipped"
     return 0
   }
@@ -519,7 +517,7 @@ collect_status_codes() {
   timestamp=$(day_timestamp "$day")
 
   read -r -d '' query <<'EOF' || true
-query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
+query($zoneTag: String!, $start: Time!, $end: Time!) {
   viewer {
     zones(filter: { zoneTag: $zoneTag }) {
       series: httpRequests1mGroups(
@@ -528,7 +526,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
           datetime_lt: $end
           requestSource: "eyeball"
         }
-        limit: $limit
+        limit: 5000
       ) {
         sum {
           responseStatusMap {
@@ -542,7 +540,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
 }
 EOF
 
-  response=$(graphql_query "collect_status_codes" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end" "5000")") || {
+  response=$(graphql_query "collect_status_codes" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_status_codes skipped"
     return 0
   }
@@ -574,7 +572,7 @@ collect_threats() {
   timestamp=$(day_timestamp "$day")
 
   read -r -d '' query <<'EOF' || true
-query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
+query($zoneTag: String!, $start: Time!, $end: Time!) {
   viewer {
     zones(filter: { zoneTag: $zoneTag }) {
       series: httpRequests1mGroups(
@@ -583,7 +581,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
           datetime_lt: $end
           requestSource: "eyeball"
         }
-        limit: $limit
+        limit: 5000
       ) {
         sum {
           threats
@@ -594,7 +592,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
 }
 EOF
 
-  response=$(graphql_query "collect_threats" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end" "5000")") || {
+  response=$(graphql_query "collect_threats" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_threats skipped"
     return 0
   }
@@ -623,17 +621,17 @@ collect_hostnames() {
 
   zone_tag=$(escape_tag_value "$CLOUDFLARE_ZONE_TAG")
 
-  read -r -d '' query <<'EOF' || true
-query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
+  read -r -d '' query <<EOF || true
+query(\$zoneTag: String!, \$start: Time!, \$end: Time!) {
   viewer {
-    zones(filter: { zoneTag: $zoneTag }) {
+    zones(filter: { zoneTag: \$zoneTag }) {
       series: httpRequestsAdaptiveGroups(
         filter: {
-          datetime_geq: $start
-          datetime_lt: $end
+          datetime_geq: \$start
+          datetime_lt: \$end
           requestSource: "eyeball"
         }
-        limit: $limit
+        limit: ${TOP_N}
         orderBy: [count_DESC]
       ) {
         count
@@ -650,7 +648,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
 }
 EOF
 
-  response=$(graphql_query "collect_hostnames" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end" "$TOP_N")") || {
+  response=$(graphql_query "collect_hostnames" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_hostnames skipped"
     return 0
   }
@@ -680,17 +678,17 @@ collect_paths() {
 
   zone_tag=$(escape_tag_value "$CLOUDFLARE_ZONE_TAG")
 
-  read -r -d '' query <<'EOF' || true
-query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
+  read -r -d '' query <<EOF || true
+query(\$zoneTag: String!, \$start: Time!, \$end: Time!) {
   viewer {
-    zones(filter: { zoneTag: $zoneTag }) {
+    zones(filter: { zoneTag: \$zoneTag }) {
       series: httpRequestsAdaptiveGroups(
         filter: {
-          datetime_geq: $start
-          datetime_lt: $end
+          datetime_geq: \$start
+          datetime_lt: \$end
           requestSource: "eyeball"
         }
-        limit: $limit
+        limit: ${TOP_N}
         orderBy: [count_DESC]
       ) {
         count
@@ -707,7 +705,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
 }
 EOF
 
-  response=$(graphql_query "collect_paths" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end" "$TOP_N")") || {
+  response=$(graphql_query "collect_paths" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_paths skipped"
     return 0
   }
@@ -737,17 +735,17 @@ collect_user_agents() {
 
   zone_tag=$(escape_tag_value "$CLOUDFLARE_ZONE_TAG")
 
-  read -r -d '' query <<'EOF' || true
-query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
+  read -r -d '' query <<EOF || true
+query(\$zoneTag: String!, \$start: Time!, \$end: Time!) {
   viewer {
-    zones(filter: { zoneTag: $zoneTag }) {
+    zones(filter: { zoneTag: \$zoneTag }) {
       series: httpRequestsAdaptiveGroups(
         filter: {
-          datetime_geq: $start
-          datetime_lt: $end
+          datetime_geq: \$start
+          datetime_lt: \$end
           requestSource: "eyeball"
         }
-        limit: $limit
+        limit: ${TOP_N}
         orderBy: [count_DESC]
       ) {
         count
@@ -764,7 +762,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
 }
 EOF
 
-  response=$(graphql_query "collect_user_agents" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end" "$TOP_N")") || {
+  response=$(graphql_query "collect_user_agents" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_user_agents skipped"
     return 0
   }
@@ -796,7 +794,7 @@ collect_content_types() {
   timestamp=$(day_timestamp "$day")
 
   read -r -d '' query <<'EOF' || true
-query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
+query($zoneTag: String!, $start: Time!, $end: Time!) {
   viewer {
     zones(filter: { zoneTag: $zoneTag }) {
       series: httpRequests1mGroups(
@@ -805,7 +803,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
           datetime_lt: $end
           requestSource: "eyeball"
         }
-        limit: $limit
+        limit: 5000
       ) {
         sum {
           contentTypeMap {
@@ -820,7 +818,7 @@ query($zoneTag: String!, $start: Time!, $end: Time!, $limit: Int!) {
 }
 EOF
 
-  response=$(graphql_query "collect_content_types" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end" "5000")") || {
+  response=$(graphql_query "collect_content_types" "$query" "$(build_query "$query" "$CLOUDFLARE_ZONE_TAG" "$start" "$end")") || {
     log_warn "collect_content_types skipped"
     return 0
   }
