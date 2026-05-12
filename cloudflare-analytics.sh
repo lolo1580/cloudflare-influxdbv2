@@ -469,7 +469,6 @@ query($zoneTag: String!, $start: Time!, $end: Time!) {
         filter: {
           datetime_geq: $start
           datetime_lt: $end
-          requestSource: "eyeball"
         }
         limit: 5000
       ) {
@@ -537,7 +536,6 @@ query($zoneTag: String!, $start: Time!, $end: Time!) {
         filter: {
           datetime_geq: $start
           datetime_lt: $end
-          requestSource: "eyeball"
         }
         limit: 5000
       ) {
@@ -592,7 +590,6 @@ query($zoneTag: String!, $start: Time!, $end: Time!) {
         filter: {
           datetime_geq: $start
           datetime_lt: $end
-          requestSource: "eyeball"
         }
         limit: 5000
       ) {
@@ -814,7 +811,6 @@ query($zoneTag: String!, $start: Time!, $end: Time!) {
         filter: {
           datetime_geq: $start
           datetime_lt: $end
-          requestSource: "eyeball"
         }
         limit: 5000
       ) {
