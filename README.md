@@ -297,10 +297,35 @@ Screenshot placeholders:
 ![Cloudflare cache and status](docs/screenshots/grafana-cache-status.png)
 ```
 
-## Systemd
+## Systemd Timer
 
-Use a oneshot service plus a timer. Cloudflare daily analytics can lag by several
-hours, so the recommended schedule is once per day after the data has settled.
+Use a systemd oneshot service plus a timer to run the import automatically.
+Cloudflare daily analytics can lag by several hours, so the recommended schedule
+is once per day after the data has settled.
+
+Recommended locations:
+
+- Script directory: `/home/YOUR_USERNAME/gh/cloudflare-influxdbv2`
+- Environment file: `/home/YOUR_USERNAME/gh/cloudflare-influxdbv2/.env`
+- Service file: `/etc/systemd/system/cloudflare-analytics.service`
+- Timer file: `/etc/systemd/system/cloudflare-analytics.timer`
+
+Replace `YOUR_USERNAME` with the Linux user that owns this repository. For
+example, on this machine that could be `laurent`.
+
+Make sure the script is executable:
+
+```bash
+chmod +x /home/YOUR_USERNAME/gh/cloudflare-influxdbv2/cloudflare-analytics.sh
+```
+
+Create the service file:
+
+```bash
+sudo nano /etc/systemd/system/cloudflare-analytics.service
+```
+
+Paste this content:
 
 ```ini
 [Unit]
@@ -316,6 +341,14 @@ Environment=ENV_FILE=/home/YOUR_USERNAME/gh/cloudflare-influxdbv2/.env
 ExecStart=/home/YOUR_USERNAME/gh/cloudflare-influxdbv2/cloudflare-analytics.sh
 ```
 
+Create the timer file:
+
+```bash
+sudo nano /etc/systemd/system/cloudflare-analytics.timer
+```
+
+Paste this content:
+
 ```ini
 [Unit]
 Description=Run Cloudflare Analytics to InfluxDB daily
@@ -329,10 +362,36 @@ Persistent=true
 WantedBy=timers.target
 ```
 
+`OnCalendar=*-*-* 04:30:00` runs the script every day at 04:30 local server
+time. Change the time if your server should import later.
+
+Reload systemd, test the service once, then enable the timer:
+
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable cloudflare-analytics.timer
-sudo systemctl start cloudflare-analytics.timer
+sudo systemctl start cloudflare-analytics.service
+sudo systemctl status cloudflare-analytics.service
+sudo systemctl enable --now cloudflare-analytics.timer
+```
+
+Check that the timer is active and see when it will run next:
+
+```bash
+systemctl list-timers cloudflare-analytics.timer
+```
+
+Read logs:
+
+```bash
+journalctl -u cloudflare-analytics.service -n 100 --no-pager
+journalctl -u cloudflare-analytics.timer -n 100 --no-pager
+```
+
+After changing either the `.service` or `.timer` file, reload systemd again:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart cloudflare-analytics.timer
 ```
 
 ## Validation
